@@ -1,0 +1,99 @@
+services:
+  # MySQL 服务
+  alink-mysql:
+    image: mysql:8.0
+    container_name: alink-mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: alinkiot
+      MYSQL_DATABASE: alinkiot
+      MYSQL_USER: alinkiot
+      MYSQL_PASSWORD: a112345666
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./log/mysql:/var/log/mysql
+      - ./init/mysql:/docker-entrypoint-initdb.d
+      - /etc/localtime:/etc/localtime:ro
+      - /etc/timezone:/etc/timezone:ro
+    ports:
+      - "3306:3306"
+    networks:
+      - alink-network
+    restart: unless-stopped
+
+  # TDengine 服务
+  alink-tdengine:
+    image: tdengine/tdengine:3.0.3.2
+    container_name: alink-tdengine
+    environment:
+      TAOS_FQDN: tdengine 
+    volumes:
+      - tdengine_data:/var/lib/taos 
+      - ./log/tdengine:/var/log/taos
+      - ./init/tdengine:/docker-entrypoint-initdb.d
+      - /etc/localtime:/etc/localtime:ro
+      - /etc/timezone:/etc/timezone:ro
+    ports:
+      - "6030:6030"   # REST API 端口
+      - "6041:6041"   # 客户端连接端口
+      - "6043-6049:6043-6049"  # 其他可选端口
+      - "6043-6049:6043-6049/udp"
+    networks:
+      - alink-network
+    restart: unless-stopped
+
+  # Nginx 服务
+  nginx:
+    image: nginx:alpine
+    container_name: nginx
+    ports:
+      - "80:80"
+    volumes:
+      - ./config/nginx.conf:/etc/nginx/conf.d/default.conf
+      - ./log/nginx:/var/log/nginx
+      - ./www/dist:/var/www/html
+      - /etc/localtime:/etc/localtime:ro
+      - /etc/timezone:/etc/timezone:ro
+    networks:
+      - alink-network
+    depends_on:
+      - alinkiot
+    restart: unless-stopped
+
+  # AlinkIoT 服务
+  alinkiot:
+    image: registry.cn-hangzhou.aliyuncs.com/uzyiot/alinkiot:dev-0.0.339
+    container_name: alinkiot
+    deploy:
+      resources:
+        limits:
+          cpus: "1.5"
+          memory: 2G
+        reservations:
+          cpus: "1.0"
+          memory: 1G    
+    ports:
+      - "18888:18888"
+      - "1883:1883"
+      - "8083:8083"
+      - "6500:6500"
+    volumes:
+      - ./www/upload:/data/www/iotapi/upload
+      - ./log/alinkiot:/opt/alinkiot/log
+      - ./config/etc:/opt/alinkiot/etc
+      - ./LICENSE:/opt/alinkiot/bin/LICENSE
+      - /etc/localtime:/etc/localtime:ro
+      - /etc/timezone:/etc/timezone:ro
+    networks:
+      - alink-network
+    depends_on:
+      - alink-mysql
+      - alink-tdengine
+    restart: unless-stopped
+
+networks:
+  alink-network:
+    driver: bridge
+
+volumes:
+  mysql_data:
+  tdengine_data:
