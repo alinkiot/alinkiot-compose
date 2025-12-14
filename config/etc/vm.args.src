@@ -2,31 +2,15 @@
 ## Erlang VM Args
 ######################################################################
 
-## NOTE:
-##
-## Arguments configured in this file might be overridden by configs from `emqx.conf`.
-##
-## Some basic VM arguments are to be configured in `emqx.conf`,
-## such as `node.name` for `-name` and `node.cooke` for `-setcookie`.
-
 ## Sets the maximum number of simultaneously existing processes for this system.
-+P 2097152
++P 5000000
 
 ## Sets the maximum number of simultaneously existing ports for this system.
-+Q 1048576
-
-## Sets the maximum number of ETS tables
-+e 262144
++Q 5000000
 
 ## Sets the maximum number of atoms the virtual machine can handle.
 #+t 1048576
 
-## Set the location of crash dumps
-#-env ERL_CRASH_DUMP log/crash.dump
-
-## Set how many times generational garbages collections can be done without
-## forcing a fullsweep collection.
--env ERL_FULLSWEEP_AFTER 1000
 
 ## Heartbeat management; auto-restarts VM if it dies or becomes unresponsive
 ## (Disabled by default..use with caution!)
@@ -36,9 +20,6 @@
 ## Can be one of: inet_tcp, inet6_tcp, inet_tls
 #-proto_dist inet_tcp
 
-## Specify SSL Options in the file if using SSL for Erlang Distribution.
-## Used only when -proto_dist set to inet_tls
-#-ssl_dist_optfile etc/ssl_dist.conf
 
 ## Specifies the net_kernel tick time in seconds.
 ## This is the approximate time a connected node may be unresponsive until
@@ -112,7 +93,5 @@
 
 ## Specifies how long time (in milliseconds) to spend shutting down the system.
 ## See: http://erlang.org/doc/man/erl.html
--shutdown_time 30000
+#-shutdown_time 30000
 
-## patches dir
--pa "data/patches"
