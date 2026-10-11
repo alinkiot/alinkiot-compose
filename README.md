@@ -6,13 +6,13 @@
 
 | 分支 | 说明 |
 |------|------|
-| `dev2.0` | 全新架构的版本 |
-| `main` | 旧版本 |
+| `main` | 全新架构的版本 |
+| `dev` | 旧版本 |
 
 > 请根据需要切换到对应分支后再进行部署，例如使用全新架构版本：
 >
 > ```bash
-> git checkout dev2.0
+> git checkout main
 > ```
 
 > ⚠️ 不同分支使用的 `alinkiot` 后端镜像版本不同，且会随版本迭代更新。实际版本**以所在分支的 `docker-compose.yaml` 为准**，可执行以下命令查看：
@@ -25,8 +25,8 @@
 >
 > | 分支 | alinkiot 镜像 |
 > |------|---------------|
-> | `main` | `registry.cn-hangzhou.aliyuncs.com/uzyiot/alinkiot:dev-0.0.339` |
-> | `dev2.0` | `registry.cn-hangzhou.aliyuncs.com/uzyiot/alinkiot:dev2.0-0.0.343` |
+> | `main` | `registry.cn-hangzhou.aliyuncs.com/uzyiot/alinkiot:main-0.0.1` |
+> | `dev` | `registry.cn-hangzhou.aliyuncs.com/uzyiot/alinkiot:dev-0.0.339` |
 
 ## 架构组成
 
