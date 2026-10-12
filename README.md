@@ -253,14 +253,7 @@ docker exec -i alink-mysql sh -c 'mysql -u root -p"alinkiot" alinkiot' < backup.
 
 部署或使用过程中遇到问题，欢迎通过以下方式联系获取支持：
 
-部署或使用过程中遇到问题，欢迎通过以下方式联系获取支持：
-
-<p>
-  <img src="docs/images/assistant-qrcode.png" width="180" alt="助手微信二维码" />
-  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-  <img src="docs/images/official-account-qrcode.jpg" width="180" alt="公众号二维码" />
-</p>
-
-<p>
-  扫码添加助手微信（左）&nbsp;&nbsp;·&nbsp;&nbsp;扫码关注公众号（右）
-</p>
+| 助手微信 | 公众号 |
+|:---:|:---:|
+| <img src="docs/images/assistant-qrcode.png" width="180" alt="助手微信二维码" /> | <img src="docs/images/official-account-qrcode.jpg" width="180" alt="公众号二维码" /> |
+| 扫码添加助手微信 | 扫码关注公众号 |
