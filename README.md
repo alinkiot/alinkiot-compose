@@ -248,3 +248,12 @@ docker exec -i alink-mysql sh -c 'mysql -u root -p"alinkiot" alinkiot' < backup.
 | 停止并清空数据卷 | `docker-compose down -v`（危险） |
 | 进入 TDengine CLI | `docker exec -it alink-tdengine taos` |
 | 进入 MySQL CLI | `docker exec -it alink-mysql mysql -uroot -palinkiot` |
+
+## 技术支持
+
+部署或使用过程中遇到问题，欢迎通过以下方式联系获取支持：
+
+| 助手微信 | 公众号 |
+|:---:|:---:|
+| <img src="docs/images/assistant-qrcode.png" width="200" alt="助手微信二维码" /> | <img src="docs/images/official-account-qrcode.jpg" width="200" alt="公众号二维码" /> |
+| 扫码添加助手微信 | 扫码关注公众号 |
