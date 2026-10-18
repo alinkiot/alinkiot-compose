@@ -86,8 +86,14 @@ docker-compose up -d
 
 启动完成后访问：
 
-- 平台前端：`http://<服务器IP>/`
-- 后端 API：`http://<服务器IP>:18888/iotapi`
+| 服务 | 地址 | 说明 |
+|------|------|------|
+| 平台前端 | `http://<服务器IP>/` | Nginx 托管的 Web 控制台 |
+| 后端 API（直连） | `http://<服务器IP>:18888/iotapi` | 后端 REST API 直接访问 |
+| 后端 API（代理） | `http://<服务器IP>/iotapi` | 经 Nginx 反向代理的 API 入口 |
+| MQTT | `mqtt://<服务器IP>:1883` | 设备 MQTT 接入端口 |
+| MQTT over WebSocket | `ws://<服务器IP>:8083/mqtt` | 设备 MQTT over WS 接入端口（经 Nginx 代理） |
+| MQTT over WebSocket（直连） | `ws://<服务器IP>:8083` | 后端 MQTT over WS 直接访问 |
 
 查看运行状态与日志：
 
