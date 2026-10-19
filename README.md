@@ -25,7 +25,7 @@
 >
 > | 分支 | alinkiot 镜像 |
 > |------|---------------|
-> | `main` | `registry.cn-hangzhou.aliyuncs.com/uzyiot/alinkiot:main-0.0.1` |
+> | `main` | `registry.cn-hangzhou.aliyuncs.com/uzyiot/alinkiot:main-0.0.3` |
 > | `dev` | `registry.cn-hangzhou.aliyuncs.com/uzyiot/alinkiot:dev-0.0.339` |
 
 ## 架构组成
@@ -46,7 +46,6 @@ Nginx 将 `/iotapi` 反向代理到后端 `18888`、`/mqtt` 反向代理到后�
 ```
 alinkiot-compose/
 ├── docker-compose.yaml      # 编排文件
-├── LICENSE                  # 授权文件（挂载进 alinkiot 容器）
 ├── config/
 │   ├── nginx.conf           # Nginx 站点配置
 │   └── etc/                 # AlinkIoT 后端配置（emqx.conf、证书、插件等）
@@ -101,62 +100,6 @@ docker-compose up -d
 docker-compose ps
 docker-compose logs -f alinkiot
 ```
-
-## 获取并配置 License
-
-AlinkIoT 启动后需要有效的 License，否则 `alinkiot` 日志中会出现如下提示：
-
-```
-The LICENSE is invalid
-
-Your Key:fc0d6f9fe38033da769dd82ce26fb688
-
-Get your free license:
-
-  1.Copy the key and visit: https://www.uzyiot.com/license
-  2.Write the License to file bin/LICENSE
-```
-
-> `docker-compose.yaml` 已将项目根目录下的 `LICENSE` 文件挂载到容器内的 `/opt/alinkiot/bin/LICENSE`，因此只需把 License 写入**当前目录下的 `LICENSE` 文件**即可，无需进入容器。
-
-### 获取步骤
-
-1. **启动服务并从日志获取 Key**
-
-   ```bash
-   docker-compose logs alinkiot | grep "Your Key"
-   ```
-
-   日志中 `Your Key:` 后面的字符串即为本次部署的机器 Key（每次部署可能不同，以日志实际输出为准）。
-
-2. **用 Key 换取免费 License**
-
-   复制上一步的 Key，访问 <https://www.uzyiot.com/license>，粘贴 Key 并申请免费 License，页面会返回一串 License 字符串。
-
-3. **将 License 写入当前目录的 `LICENSE` 文件**
-
-   在项目根目录（`docker-compose.yaml` 所在目录）下，将换取到的 License 写入 `LICENSE` 文件，内容应**只包含 License 字符串本身**，不要有多余空行或空格：
-
-   ```bash
-   # 将 <你的License> 替换为上一步换取到的 License 字符串
-   printf '%s' '<你的License>' > LICENSE
-   ```
-
-   > 使用 `printf` 而非 `echo`，可避免在文件末尾写入换行符导致 License 校验失败。
-
-4. **重启 alinkiot 使 License 生效**
-
-   ```bash
-   docker-compose restart alinkiot
-   ```
-
-   重新查看日志确认不再出现 `The LICENSE is invalid` 即配置成功：
-
-   ```bash
-   docker-compose logs alinkiot | grep -i license
-   ```
-
-> License 与机器 Key 绑定，更换部署环境后需重新获取；`LICENSE` 文件已加入 `.gitignore`，每个部署环境需单独申请并配置。
 
 ## 启动 / 重启 / 停止
 
