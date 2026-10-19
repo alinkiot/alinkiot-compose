@@ -1,4 +1,9 @@
 .DS_Store
 log/*
 .well-known
+
+# license credentials - never commit
 LICENSE
+alinkiot.key
+alinkiot-key/*
+!alinkiot-key/.gitkeep

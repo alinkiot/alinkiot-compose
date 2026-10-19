@@ -13,7 +13,6 @@ services:
       - ./log/mysql:/var/log/mysql
       - ./init/mysql:/docker-entrypoint-initdb.d
       - /etc/localtime:/etc/localtime:ro
-      - /etc/timezone:/etc/timezone:ro
     ports:
       - "3306:3306"
     networks:
@@ -31,7 +30,6 @@ services:
       - ./log/tdengine:/var/log/taos
       - ./init/tdengine:/docker-entrypoint-initdb.d
       - /etc/localtime:/etc/localtime:ro
-      - /etc/timezone:/etc/timezone:ro
     ports:
       - "6030:6030"   # REST API 端口
       - "6041:6041"   # 客户端连接端口
@@ -52,7 +50,6 @@ services:
       - ./log/nginx:/var/log/nginx
       - ./www/dist:/var/www/html
       - /etc/localtime:/etc/localtime:ro
-      - /etc/timezone:/etc/timezone:ro
     networks:
       - alink-network
     depends_on:
@@ -76,13 +73,14 @@ services:
       - "1883:1883"
       - "8083:8083"
       - "6500:6500"
+    mac_address: "02:42:ac:1a:00:10"
     volumes:
       - ./www/upload:/opt/alinkiot/www/upload
       - ./log/alinkiot:/opt/alinkiot/log
       - ./config/etc:/opt/alinkiot/etc
       - ./LICENSE:/opt/alinkiot/bin/LICENSE
+      - ./alinkiot-key:/root/.config/alinkiot
       - /etc/localtime:/etc/localtime:ro
-      - /etc/timezone:/etc/timezone:ro
     networks:
       - alink-network
     depends_on:
