@@ -39,6 +39,32 @@ services:
       - alink-network
     restart: unless-stopped
 
+  # 前端初始化服务（下载 release zip 并解压到 www/dist，完成后自动退出）
+  frontend-init:
+    image: alpine:3.19
+    container_name: frontend-init
+    environment:
+      - FRONTEND_URL=https://github.com/alinkiot/alinkiot_dashboard/releases/download/v0.0.1/dist.zip
+    volumes:
+      - ./www/dist:/dist
+    command: >
+      sh -c "
+        apk add --no-cache curl unzip &&
+        echo '>>> 下载前端...' &&
+        curl -fL --retry 3 -o /tmp/dist.zip $$FRONTEND_URL &&
+        echo '>>> 清理旧文件...' &&
+        rm -rf /dist/* &&
+        echo '>>> 解压...' &&
+        unzip -q /tmp/dist.zip -d /tmp/dist_extracted &&
+        if [ -d /tmp/dist_extracted/dist ]; then
+          cp -r /tmp/dist_extracted/dist/. /dist/;
+        else
+          cp -r /tmp/dist_extracted/. /dist/;
+        fi &&
+        echo '>>> 前端部署完成'
+      "
+    restart: "no"
+
   # Nginx 服务
   nginx:
     image: nginx:alpine
@@ -53,7 +79,10 @@ services:
     networks:
       - alink-network
     depends_on:
-      - alinkiot
+      frontend-init:
+        condition: service_completed_successfully
+      alinkiot:
+        condition: service_started
     restart: unless-stopped
 
   # AlinkIoT 服务

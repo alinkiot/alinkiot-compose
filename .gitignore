@@ -2,6 +2,10 @@
 log/*
 .well-known
 
+# 前端构建产物，由 frontend-init 容器运行时自动下载，不提交到仓库
+www/dist/*
+!www/dist/.gitkeep
+
 # license credentials - never commit
 LICENSE
 alinkiot.key

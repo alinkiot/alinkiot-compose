@@ -30,16 +30,19 @@
 
 ## 架构组成
 
-`docker-compose.yaml` 中定义了以下四个服务，运行在同一个 `alink-network` 桥接网络内：
+`docker-compose.yaml` 中定义了以下服务，运行在同一个 `alink-network` 桥接网络内：
 
 | 服务 | 镜像 | 说明 | 对外端口 |
 |------|------|------|----------|
 | `alink-mysql` | `mysql:8.0` | 业务数据库，存储平台配置、设备、用户等数据 | `3306` |
 | `alink-tdengine` | `tdengine/tdengine:3.0.3.2` | 时序数据库，存储设备上报的时序数据 | `6030`、`6041`、`6043-6049`(TCP/UDP) |
 | `alinkiot` | `registry.cn-hangzhou.aliyuncs.com/uzyiot/alinkiot:<分支对应版本>` | 平台核心后端服务（镜像 tag 以所在分支的 `docker-compose.yaml` 为准，详见上文「分支说明」） | `18888`(API)、`1883`(MQTT)、`8083`(MQTT over WS)、`6500` |
-| `nginx` | `nginx:alpine` | 前端静态资源托管 + 反向代理 | `80` |
+| `frontend-init` | `alpine:3.19` | 一次性初始化服务，从 GitHub Release 下载前端构建产物并解压到 `www/dist`，完成后自动退出 | — |
+| `nginx` | `nginx:alpine` | 前端静态资源托管 + 反向代理，等待 `frontend-init` 完成后启动 | `80` |
 
 Nginx 将 `/iotapi` 反向代理到后端 `18888`、`/mqtt` 反向代理到后端 `8083`，前端页面从 `www/dist` 提供。
+
+> ⚠️ 前端资源从 [alinkiot/alinkiot_dashboard](https://github.com/alinkiot/alinkiot_dashboard) 的 GitHub Release 自动下载，该仓库需为**公开（Public）**，否则 `curl` 下载会因权限不足失败，导致 nginx 无法启动。
 
 ## 目录结构
 
@@ -185,6 +188,28 @@ docker exec alink-mysql sh -c 'mysqldump -u root -p"alinkiot" alinkiot' > backup
 docker exec -i alink-mysql sh -c 'mysql -u root -p"alinkiot" alinkiot' < backup.sql
 ```
 
+## 更新前端版本
+
+前端版本由 `docker-compose.yaml` 中 `frontend-init` 服务的 `FRONTEND_URL` 环境变量控制。
+
+更新步骤：
+
+1. 修改 `docker-compose.yaml` 中的版本号：
+
+   ```yaml
+   environment:
+     - FRONTEND_URL=https://github.com/alinkiot/alinkiot_dashboard/releases/download/v0.0.2/dist.zip
+   ```
+
+2. 重新执行初始化并重启 nginx：
+
+   ```bash
+   docker-compose up -d --force-recreate frontend-init
+   docker-compose restart nginx
+   ```
+
+> `frontend-init` 默认 `restart: "no"`，不会自动重跑，需要手动 `--force-recreate` 触发。
+
 ## 常见操作速查
 
 | 操作 | 命令 |
@@ -193,6 +218,8 @@ docker exec -i alink-mysql sh -c 'mysql -u root -p"alinkiot" alinkiot' < backup.
 | 重启全部服务 | `docker-compose down && docker-compose up -d` |
 | 查看状态 | `docker-compose ps` |
 | 查看后端日志 | `docker-compose logs -f alinkiot` |
+| 查看前端初始化日志 | `docker-compose logs frontend-init` |
+| 更新前端版本 | 改 `FRONTEND_URL` 后执行 `docker-compose up -d --force-recreate frontend-init && docker-compose restart nginx` |
 | 停止并移除容器 | `docker-compose down` |
 | 停止并清空数据卷 | `docker-compose down -v`（危险） |
 | 进入 TDengine CLI | `docker exec -it alink-tdengine taos` |
