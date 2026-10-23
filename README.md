@@ -25,7 +25,7 @@
 >
 > | 分支 | alinkiot 镜像 |
 > |------|---------------|
-> | `main` | `registry.cn-hangzhou.aliyuncs.com/uzyiot/alinkiot:main-0.0.3` |
+> | `main` | `registry.cn-hangzhou.aliyuncs.com/uzyiot/alinkiot:main-0.0.4` |
 > | `dev` | `registry.cn-hangzhou.aliyuncs.com/uzyiot/alinkiot:dev-0.0.339` |
 
 ## 架构组成

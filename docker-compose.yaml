@@ -59,7 +59,7 @@ services:
 
   # AlinkIoT 服务
   alinkiot:
-    image: registry.cn-hangzhou.aliyuncs.com/uzyiot/alinkiot:main-0.0.3
+    image: registry.cn-hangzhou.aliyuncs.com/uzyiot/alinkiot:main-0.0.4
     container_name: alinkiot
     deploy:
       resources:
@@ -78,8 +78,9 @@ services:
     volumes:
       - ./www/upload:/opt/alinkiot/www/upload
       - ./log/alinkiot:/opt/alinkiot/log
-      - ./config/etc:/opt/alinkiot/etc
-      - ./LICENSE:/opt/alinkiot/bin/LICENSE
+      - ./config/certs:/opt/alinkiot/etc/certs
+      - ./config/etc/alinkiot.conf:/opt/alinkiot/etc/alinkiot.conf
+      - ./config/etc/alinkiot.config:/opt/alinkiot/etc/alinkiot.config
       - /etc/localtime:/etc/localtime:ro
     networks:
       - alink-network
