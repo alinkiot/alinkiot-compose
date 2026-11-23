@@ -39,17 +39,17 @@
 | `alinkiot` | `registry.cn-hangzhou.aliyuncs.com/uzyiot/alinkiot:<分支对应版本>` | 平台核心后端服务（镜像 tag 以所在分支的 `docker-compose.yaml` 为准，详见上文「分支说明」） | `18888`(API)、`1883`(MQTT)、`8083`(MQTT over WS)、`6500` |
 | `nginx` | `nginx:alpine` | 托管 `www/dist` 中的前端静态资源并反向代理 | `58080` |
 
-运行根目录的 `install.sh`（Linux/macOS）或 `install.cmd`（Windows）时，会先从 GitHub Release 下载前端并解压到 `www/dist`，然后启动 Docker Compose 服务。Nginx 将该目录挂载到容器内的 `/var/www/html`，并将 `/iotapi` 反向代理到后端 `18888`、`/mqtt` 反向代理到后端 `8083`。
+仓库自带前端压缩包 `www/dist.zip`（初始版本），安装脚本默认**不联网下载**：如果 `www/dist` 已存在就直接复用，否则从 `www/dist.zip` 解压出前端，然后启动 Docker Compose 服务。只有显式带 `update` 参数运行时，才会从 GitHub Release 下载最新前端并覆盖。Nginx 将 `www/dist` 挂载到容器内的 `/var/www/html`，并将 `/iotapi` 反向代理到后端 `18888`、`/mqtt` 反向代理到后端 `8083`。
 
-> ⚠️ 前端资源从 [alinkiot/alinkiot_dashboard](https://github.com/alinkiot/alinkiot_dashboard) 的 GitHub Release 下载，该仓库需为**公开（Public）**。
+> 💡 首次部署全程离线可用，不依赖外网。需要更新前端版本时才走网络下载。
 
 ## 目录结构
 
 ```
 alinkiot-compose/
 ├── docker-compose.yaml      # 编排文件
-├── install.sh               # 下载前端并启动服务
-├── install.cmd              # Windows 下载前端并启动服务
+├── install.sh               # 启动服务（默认用自带前端，update 时下载更新）
+├── install.cmd              # Windows 启动服务（同 install.sh）
 ├── config/
 │   ├── etc/                 # AlinkIoT 后端配置（emqx.conf、证书、插件等）
 │   ├── nginx.conf           # Nginx 站点配置
@@ -57,7 +57,8 @@ alinkiot-compose/
 │   ├── mysql/backup.sql     # MySQL 初始化脚本（首次启动自动导入）
 │   └── tdengine/init.sql    # TDengine 初始化脚本
 ├── www/
-│   ├── dist/                # 安装脚本下载的前端静态文件
+│   ├── dist.zip             # 仓库自带的前端压缩包（首次部署从中解压）
+│   ├── dist/                # 解压后的前端静态文件（gitignore，不入库）
 │   └── upload/              # 上传文件目录
 └── log/                     # 各服务日志挂载目录（mysql / tdengine / nginx / alinkiot）
 ```
@@ -66,7 +67,7 @@ alinkiot-compose/
 
 - 已安装 **Docker**
 - 已安装 **Docker Compose**
-- Linux/macOS 使用 `install.sh` 时需安装 `curl` 和 `unzip`
+- Linux/macOS 使用 `install.sh` 首次部署需安装 `unzip`（仅 `update` 更新前端时额外需要 `curl`）
 - Windows 使用 `install.cmd`，需安装 Docker Desktop（含 Docker Compose）和 Windows PowerShell
 
 查看 Docker / Compose 版本：
@@ -199,33 +200,34 @@ docker exec -i alinkiot-mysql sh -c 'mysql -u root -p"alinkiot" alinkiot' < back
 
 ## 更新前端版本
 
-前端版本由 `install.sh` / `install.cmd` 中的 `FRONTEND_URL` 默认值控制。也可以通过环境变量临时指定下载地址：
-
-更新步骤：
-
-用目标 Release 地址重新运行安装脚本：
+默认运行 `install.sh` / `install.cmd`（不带参数）只会使用仓库自带或已解压的前端，**不联网下载**。需要更新前端时，加 `update` 参数，脚本会从 `FRONTEND_URL` 下载最新前端并覆盖 `www/dist`：
 
 ```bash
-FRONTEND_URL=https://github.com/alinkiot/alinkiot_dashboard/releases/download/v0.0.2/dist.zip ./install.sh
+./install.sh update
 ```
 
 Windows 命令提示符：
 
 ```bat
-set "FRONTEND_URL=https://github.com/alinkiot/alinkiot_dashboard/releases/download/v0.0.2/dist.zip"
-install.cmd
+install.cmd update
+```
+
+下载地址由脚本中的 `FRONTEND_URL` 默认值控制，也可通过环境变量临时指定其它版本：
+
+```bash
+FRONTEND_URL=https://github.com/alinkiot/alinkiot_dashboard/releases/download/v0.0.3/dist.zip ./install.sh update
 ```
 ## 常见操作速查
 
 | 操作 | 命令 |
 |------|------|
-| 一键下载前端并启动（Linux/macOS） | `./install.sh` |
-| 一键下载前端并启动（Windows） | `install.cmd` |
+| 一键安装并启动（Linux/macOS，用自带前端） | `./install.sh` |
+| 一键安装并启动（Windows，用自带前端） | `install.cmd` |
 | 重启全部服务 | `docker-compose down && docker-compose up -d` |
 | 查看状态 | `docker-compose ps` |
 | 查看后端日志 | `docker-compose logs -f alinkiot` |
-| 更新前端版本（Linux/macOS） | `FRONTEND_URL=<下载地址> ./install.sh` |
-| 更新前端版本（Windows） | 设置 `FRONTEND_URL` 后运行 `install.cmd` |
+| 更新前端版本（Linux/macOS） | `./install.sh update` |
+| 更新前端版本（Windows） | `install.cmd update` |
 | 停止并移除容器 | `docker-compose down` |
 | 停止并清空数据卷 | `docker-compose down -v`（危险） |
 | 进入 TDengine CLI | `docker exec -it alinkiot-tdengine taos` |
