@@ -39,17 +39,22 @@
 | `alinkiot` | `registry.cn-hangzhou.aliyuncs.com/uzyiot/alinkiot:<分支对应版本>` | 平台核心后端服务（镜像 tag 以所在分支的 `docker-compose.yaml` 为准，详见上文「分支说明」） | `18888`(API)、`1883`(MQTT)、`8083`(MQTT over WS)、`6500` |
 | `nginx` | `nginx:alpine` | 托管 `www/dist` 中的前端静态资源并反向代理 | `58080` |
 
-仓库自带前端压缩包 `www/dist.zip`（初始版本），安装脚本默认**不联网下载**：如果 `www/dist` 已存在就直接复用，否则从 `www/dist.zip` 解压出前端，然后启动 Docker Compose 服务。只有显式带 `update` 参数运行时，才会从 GitHub Release 下载最新前端并覆盖。Nginx 将 `www/dist` 挂载到容器内的 `/var/www/html`，并将 `/iotapi` 反向代理到后端 `18888`、`/mqtt` 反向代理到后端 `8083`。
+仓库自带前端压缩包 `www/dist.zip`（初始版本）。运行方式分两种：
 
-> 💡 首次部署全程离线可用，不依赖外网。需要更新前端版本时才走网络下载。
+- `install`（不带参数）：**每次都从 `www/dist.zip` 解压覆盖 `www/dist`**，全程离线、不联网下载。相当于把前端恢复成仓库自带的初始版本。
+- `install update`：从 GitHub Release（`FRONTEND_URL`）下载最新前端并覆盖 `www/dist`。
+
+解压完成后启动 Docker Compose 服务。Nginx 将 `www/dist` 挂载到容器内的 `/var/www/html`，并将 `/iotapi` 反向代理到后端 `18888`、`/mqtt` 反向代理到后端 `8083`。
+
+> 💡 默认 `install` 全程离线可用、每次都用自带基线前端；只有 `install update` 才走网络下载最新版本。
 
 ## 目录结构
 
 ```
 alinkiot-compose/
 ├── docker-compose.yaml      # 编排文件
-├── install.sh               # 启动服务（默认用自带前端，update 时下载更新）
-├── install.cmd              # Windows 启动服务（同 install.sh）
+├── install.sh               # install=解压自带dist.zip；update=HTTP下载最新前端
+├── install.cmd              # Windows，同 install.sh
 ├── config/
 │   ├── etc/                 # AlinkIoT 后端配置（emqx.conf、证书、插件等）
 │   ├── nginx.conf           # Nginx 站点配置
@@ -57,7 +62,7 @@ alinkiot-compose/
 │   ├── mysql/backup.sql     # MySQL 初始化脚本（首次启动自动导入）
 │   └── tdengine/init.sql    # TDengine 初始化脚本
 ├── www/
-│   ├── dist.zip             # 仓库自带的前端压缩包（首次部署从中解压）
+│   ├── dist.zip             # 仓库自带的前端压缩包（每次 install 从中解压）
 │   ├── dist/                # 解压后的前端静态文件（gitignore，不入库）
 │   └── upload/              # 上传文件目录
 └── log/                     # 各服务日志挂载目录（mysql / tdengine / nginx / alinkiot）
@@ -200,7 +205,7 @@ docker exec -i alinkiot-mysql sh -c 'mysql -u root -p"alinkiot" alinkiot' < back
 
 ## 更新前端版本
 
-默认运行 `install.sh` / `install.cmd`（不带参数）只会使用仓库自带或已解压的前端，**不联网下载**。需要更新前端时，加 `update` 参数，脚本会从 `FRONTEND_URL` 下载最新前端并覆盖 `www/dist`：
+默认运行 `install.sh` / `install.cmd`（不带参数）每次都会从仓库自带的 `www/dist.zip` 解压覆盖 `www/dist`，**不联网下载**（前端恢复成基线版本）。需要更新到最新前端时，加 `update` 参数，脚本会从 `FRONTEND_URL` 下载最新版本并覆盖 `www/dist`：
 
 ```bash
 ./install.sh update

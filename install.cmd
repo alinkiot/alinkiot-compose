@@ -28,19 +28,15 @@ if "%MODE%"=="update" (
         exit /b 1
     )
 ) else (
-    if exist "www\dist\index.html" (
-        echo Using existing frontend in www\dist - skip download
-    ) else (
-        if not exist "www\dist.zip" (
-            echo www\dist.zip not found and no frontend in www\dist. Run with 'update' to download.
-            exit /b 1
-        )
-        echo Extracting bundled frontend from www\dist.zip
-        powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "$ErrorActionPreference='Stop'; $root=(Get-Location).Path; $www=Join-Path $root 'www'; $zip=Join-Path $www 'dist.zip'; $work=Join-Path $env:TEMP ('alinkiot-'+[guid]::NewGuid().ToString()); $stage=Join-Path $www ('.dist-stage-'+[guid]::NewGuid().ToString()); try { New-Item -ItemType Directory -Path $work,$stage -Force | Out-Null; Expand-Archive -LiteralPath $zip -DestinationPath (Join-Path $work 'extracted'); $source=Join-Path $work 'extracted\dist'; if (-not (Test-Path (Join-Path $source 'index.html'))) { $source=Join-Path $work 'extracted' }; if (-not (Test-Path (Join-Path $source 'index.html'))) { throw 'Frontend archive does not contain index.html' }; Copy-Item -Path (Join-Path $source '*') -Destination $stage -Recurse -Force; $dist=Join-Path $www 'dist'; if (Test-Path $dist) { Remove-Item $dist -Recurse -Force }; Move-Item -LiteralPath $stage -Destination $dist } finally { if (Test-Path $work) { Remove-Item $work -Recurse -Force }; if (Test-Path $stage) { Remove-Item $stage -Recurse -Force } }"
-        if errorlevel 1 (
-            echo Bundled frontend extraction failed.
-            exit /b 1
-        )
+    if not exist "www\dist.zip" (
+        echo www\dist.zip not found. Run with 'update' to download.
+        exit /b 1
+    )
+    echo Extracting bundled frontend from www\dist.zip
+    powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "$ErrorActionPreference='Stop'; $root=(Get-Location).Path; $www=Join-Path $root 'www'; $zip=Join-Path $www 'dist.zip'; $work=Join-Path $env:TEMP ('alinkiot-'+[guid]::NewGuid().ToString()); $stage=Join-Path $www ('.dist-stage-'+[guid]::NewGuid().ToString()); try { New-Item -ItemType Directory -Path $work,$stage -Force | Out-Null; Expand-Archive -LiteralPath $zip -DestinationPath (Join-Path $work 'extracted'); $source=Join-Path $work 'extracted\dist'; if (-not (Test-Path (Join-Path $source 'index.html'))) { $source=Join-Path $work 'extracted' }; if (-not (Test-Path (Join-Path $source 'index.html'))) { throw 'Frontend archive does not contain index.html' }; Copy-Item -Path (Join-Path $source '*') -Destination $stage -Recurse -Force; $dist=Join-Path $www 'dist'; if (Test-Path $dist) { Remove-Item $dist -Recurse -Force }; Move-Item -LiteralPath $stage -Destination $dist } finally { if (Test-Path $work) { Remove-Item $work -Recurse -Force }; if (Test-Path $stage) { Remove-Item $stage -Recurse -Force } }"
+    if errorlevel 1 (
+        echo Bundled frontend extraction failed.
+        exit /b 1
     )
 )
 

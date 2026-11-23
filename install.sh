@@ -62,19 +62,16 @@ install_frontend_archive() {
 }
 
 if [ "$MODE" = "update" ]; then
-    # 仅 update：下载最新前端并覆盖
+    # update：从 HTTP 下载最新前端并覆盖
     echo ">>> Updating frontend from $FRONTEND_URL"
     need_cmd curl
     curl -fL --retry 3 -o "$WORK_DIR/frontend.zip" "$FRONTEND_URL"
     install_frontend_archive "$WORK_DIR/frontend.zip"
     echo ">>> Frontend updated from $FRONTEND_URL"
-elif [ -f "$PROJECT_DIR/www/dist/index.html" ]; then
-    # 默认：已有前端则直接用，不下载不解压
-    echo ">>> Using existing frontend in www/dist (skip download)"
 else
-    # 默认：从仓库自带的压缩包解压，全程不联网
+    # 默认（install）：每次都从仓库自带 dist.zip 解压覆盖，全程不联网
     if [ ! -f "$PROJECT_DIR/www/dist.zip" ]; then
-        echo "www/dist.zip not found and no frontend in www/dist. Run with 'update' to download." >&2
+        echo "www/dist.zip not found. Run with 'update' to download." >&2
         exit 1
     fi
     echo ">>> Extracting bundled frontend from www/dist.zip"
