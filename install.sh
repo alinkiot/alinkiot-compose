@@ -2,7 +2,8 @@
 set -eu
 
 PROJECT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
-FRONTEND_URL=${FRONTEND_URL:-https://github.com/alinkiot/alinkiot_dashboard/releases/download/v0.0.2/dist.zip}
+RELEASES_API="https://api.github.com/repos/alinkiot/alinkiot_dashboard/releases/latest"
+DEFAULT_TAG="v0.0.2"
 
 MODE=install
 if [ "${1:-}" = "update" ]; then
@@ -62,12 +63,30 @@ install_frontend_archive() {
 }
 
 if [ "$MODE" = "update" ]; then
-    # update：从 HTTP 下载最新前端并覆盖
-    echo ">>> Updating frontend from $FRONTEND_URL"
+    # update：自动获取 alinkiot_dashboard 最新 release tag，拼出下载地址
     need_cmd curl
-    curl -fL --retry 3 -o "$WORK_DIR/frontend.zip" "$FRONTEND_URL"
+
+    if [ -n "${FRONTEND_URL:-}" ]; then
+        URL="$FRONTEND_URL"
+        echo ">>> Using FRONTEND_URL override: $URL"
+    else
+        LATEST_TAG=$(curl -fsSL --retry 3 --max-time 15 \
+            -H 'Accept: application/vnd.github+json' "$RELEASES_API" 2>/dev/null \
+            | grep -o '"tag_name"[[:space:]]*:[[:space:]]*"[^"]*"' | head -1 \
+            | sed 's/.*"\([^"]*\)"$/\1/') || LATEST_TAG=""
+        if [ -n "$LATEST_TAG" ]; then
+            URL="https://github.com/alinkiot/alinkiot_dashboard/releases/download/$LATEST_TAG/dist.zip"
+            echo ">>> Latest alinkiot_dashboard release: $LATEST_TAG"
+        else
+            URL="https://github.com/alinkiot/alinkiot_dashboard/releases/download/$DEFAULT_TAG/dist.zip"
+            echo ">>> Could not resolve latest tag, falling back to $DEFAULT_TAG" >&2
+        fi
+    fi
+
+    echo ">>> Updating frontend from $URL"
+    curl -fL --retry 3 -o "$WORK_DIR/frontend.zip" "$URL"
     install_frontend_archive "$WORK_DIR/frontend.zip"
-    echo ">>> Frontend updated from $FRONTEND_URL"
+    echo ">>> Frontend updated from $URL"
 else
     # 默认（install）：每次都从仓库自带 dist.zip 解压覆盖，全程不联网
     if [ ! -f "$PROJECT_DIR/www/dist.zip" ]; then

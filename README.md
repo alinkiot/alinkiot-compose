@@ -42,18 +42,18 @@
 仓库自带前端压缩包 `www/dist.zip`（初始版本）。运行方式分两种：
 
 - `install`（不带参数）：**每次都从 `www/dist.zip` 解压覆盖 `www/dist`**，全程离线、不联网下载。相当于把前端恢复成仓库自带的初始版本。
-- `install update`：从 GitHub Release（`FRONTEND_URL`）下载最新前端并覆盖 `www/dist`。
+- `install update`：**自动调用 GitHub API 获取 [alinkiot_dashboard](https://github.com/alinkiot/alinkiot_dashboard) 最新 release 的 tag**，拼出 `releases/download/<tag>/dist.zip` 下载并覆盖 `www/dist`，无需手动改版本号。
 
 解压完成后启动 Docker Compose 服务。Nginx 将 `www/dist` 挂载到容器内的 `/var/www/html`，并将 `/iotapi` 反向代理到后端 `18888`、`/mqtt` 反向代理到后端 `8083`。
 
-> 💡 默认 `install` 全程离线可用、每次都用自带基线前端；只有 `install update` 才走网络下载最新版本。
+> 💡 默认 `install` 全程离线可用、每次都用自带基线前端；只有 `install update` 才走网络，且会自动探测最新版本。API 不可用时回退到内置默认 tag `v0.0.2`。
 
 ## 目录结构
 
 ```
 alinkiot-compose/
 ├── docker-compose.yaml      # 编排文件
-├── install.sh               # install=解压自带dist.zip；update=HTTP下载最新前端
+├── install.sh               # install=解压自带dist.zip；update=自动取最新tag下载前端
 ├── install.cmd              # Windows，同 install.sh
 ├── config/
 │   ├── etc/                 # AlinkIoT 后端配置（emqx.conf、证书、插件等）
@@ -205,7 +205,7 @@ docker exec -i alinkiot-mysql sh -c 'mysql -u root -p"alinkiot" alinkiot' < back
 
 ## 更新前端版本
 
-默认运行 `install.sh` / `install.cmd`（不带参数）每次都会从仓库自带的 `www/dist.zip` 解压覆盖 `www/dist`，**不联网下载**（前端恢复成基线版本）。需要更新到最新前端时，加 `update` 参数，脚本会从 `FRONTEND_URL` 下载最新版本并覆盖 `www/dist`：
+默认运行 `install.sh` / `install.cmd`（不带参数）每次都会从仓库自带的 `www/dist.zip` 解压覆盖 `www/dist`，**不联网下载**（前端恢复成基线版本）。需要更新到最新前端时，加 `update` 参数：
 
 ```bash
 ./install.sh update
@@ -217,10 +217,12 @@ Windows 命令提示符：
 install.cmd update
 ```
 
-下载地址由脚本中的 `FRONTEND_URL` 默认值控制，也可通过环境变量临时指定其它版本：
+`update` 会自动请求 GitHub API `https://api.github.com/repos/alinkiot/alinkiot_dashboard/releases/latest`，取返回 JSON 里的 `tag_name`（如 `v0.0.3`），拼出 `https://github.com/alinkiot/alinkiot_dashboard/releases/download/<tag>/dist.zip` 下载。若 API 不可达（断网、限流等），则回退到脚本内置的 `DEFAULT_TAG`（默认 `v0.0.2`）。
+
+如需固定到某个版本或走自定义镜像，可用 `FRONTEND_URL` 环境变量覆盖自动探测（设置后脚本直接使用该地址，不再请求 API）：
 
 ```bash
-FRONTEND_URL=https://github.com/alinkiot/alinkiot_dashboard/releases/download/v0.0.3/dist.zip ./install.sh update
+FRONTEND_URL=https://github.com/alinkiot/alinkiot_dashboard/releases/download/v0.0.2/dist.zip ./install.sh update
 ```
 ## 常见操作速查
 
