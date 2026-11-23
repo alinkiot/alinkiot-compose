@@ -19,22 +19,27 @@ set "MODE=install"
 if /I "%~1"=="update" set "MODE=update"
 
 if "%MODE%"=="update" (
-    echo Resolving latest alinkiot_dashboard release tag...
-    powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "$ErrorActionPreference='Stop'; [Net.ServicePointManager]::SecurityProtocol=[Net.SecurityProtocolType]::Tls12; if ($env:FRONTEND_URL) { $u=$env:FRONTEND_URL; Write-Host ('  Using FRONTEND_URL override: '+$u) } else { try { $rel=Invoke-RestMethod -Uri 'https://api.github.com/repos/alinkiot/alinkiot_dashboard/releases/latest' -Headers @{'Accept'='application/vnd.github+json'}; $tag=$rel.tag_name; if (-not $tag) { throw 'no tag' }; $u='https://github.com/alinkiot/alinkiot_dashboard/releases/download/'+$tag+'/dist.zip'; Write-Host ('  Latest release: '+$tag) } catch { $u='https://github.com/alinkiot/alinkiot_dashboard/releases/download/v0.0.2/dist.zip'; Write-Host ('  Could not resolve latest tag, falling back to v0.0.2') } }; $root=(Get-Location).Path; $www=Join-Path $root 'www'; New-Item -ItemType Directory -Path $www -Force | Out-Null; $work=Join-Path $env:TEMP ('alinkiot-'+[guid]::NewGuid().ToString()); $stage=Join-Path $www ('.dist-stage-'+[guid]::NewGuid().ToString()); try { New-Item -ItemType Directory -Path $work,$stage -Force | Out-Null; Invoke-WebRequest -UseBasicParsing -Uri $u -OutFile (Join-Path $work 'frontend.zip'); Expand-Archive -LiteralPath (Join-Path $work 'frontend.zip') -DestinationPath (Join-Path $work 'extracted'); $source=Join-Path $work 'extracted\dist'; if (-not (Test-Path (Join-Path $source 'index.html'))) { $source=Join-Path $work 'extracted' }; if (-not (Test-Path (Join-Path $source 'index.html'))) { throw 'Frontend archive does not contain index.html' }; Copy-Item -Path (Join-Path $source '*') -Destination $stage -Recurse -Force; $dist=Join-Path $www 'dist'; if (Test-Path $dist) { Remove-Item $dist -Recurse -Force }; Move-Item -LiteralPath $stage -Destination $dist; Write-Host ('  Frontend updated from '+$u) } finally { if (Test-Path $work) { Remove-Item $work -Recurse -Force }; if (Test-Path $stage) { Remove-Item $stage -Recurse -Force } }"
+    call :online_install
     if errorlevel 1 (
-        echo Frontend download or extraction failed.
+        echo Frontend update failed.
         exit /b 1
     )
+    echo Frontend updated.
 ) else (
-    if not exist "www\dist.zip" (
-        echo www\dist.zip not found. Run with 'update' to download.
-        exit /b 1
-    )
-    echo Extracting bundled frontend from www\dist.zip
-    powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "$ErrorActionPreference='Stop'; $root=(Get-Location).Path; $www=Join-Path $root 'www'; $zip=Join-Path $www 'dist.zip'; $work=Join-Path $env:TEMP ('alinkiot-'+[guid]::NewGuid().ToString()); $stage=Join-Path $www ('.dist-stage-'+[guid]::NewGuid().ToString()); try { New-Item -ItemType Directory -Path $work,$stage -Force | Out-Null; Expand-Archive -LiteralPath $zip -DestinationPath (Join-Path $work 'extracted'); $source=Join-Path $work 'extracted\dist'; if (-not (Test-Path (Join-Path $source 'index.html'))) { $source=Join-Path $work 'extracted' }; if (-not (Test-Path (Join-Path $source 'index.html'))) { throw 'Frontend archive does not contain index.html' }; Copy-Item -Path (Join-Path $source '*') -Destination $stage -Recurse -Force; $dist=Join-Path $www 'dist'; if (Test-Path $dist) { Remove-Item $dist -Recurse -Force }; Move-Item -LiteralPath $stage -Destination $dist } finally { if (Test-Path $work) { Remove-Item $work -Recurse -Force }; if (Test-Path $stage) { Remove-Item $stage -Recurse -Force } }"
-    if errorlevel 1 (
-        echo Bundled frontend extraction failed.
-        exit /b 1
+    call :online_install
+    if not errorlevel 1 (
+        echo Frontend installed from latest release.
+    ) else (
+        echo Online fetch failed, falling back to bundled www\dist.zip
+        if not exist "www\dist.zip" (
+            echo www\dist.zip not found, cannot install offline.
+            exit /b 1
+        )
+        call :bundled_install
+        if errorlevel 1 (
+            echo Bundled frontend extraction failed.
+            exit /b 1
+        )
     )
 )
 
@@ -51,3 +56,17 @@ if errorlevel 1 (
 
 echo AlinkIoT is starting. Frontend: http://localhost:58080/
 exit /b 0
+
+rem ============ subroutines ============
+
+rem 在线安装：解析最新 tag（或 FRONTEND_URL 覆盖）→ 下载 → 解压覆盖。成功 0，失败 1。
+:online_install
+echo Resolving latest alinkiot_dashboard release tag...
+powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "$ErrorActionPreference='Stop'; [Net.ServicePointManager]::SecurityProtocol=[Net.SecurityProtocolType]::Tls12; if ($env:FRONTEND_URL) { $u=$env:FRONTEND_URL; Write-Host ('  Using FRONTEND_URL override: '+$u) } else { try { $rel=Invoke-RestMethod -Uri 'https://api.github.com/repos/alinkiot/alinkiot_dashboard/releases/latest' -Headers @{'Accept'='application/vnd.github+json'}; $tag=$rel.tag_name; if (-not $tag) { throw 'no tag' }; $u='https://github.com/alinkiot/alinkiot_dashboard/releases/download/'+$tag+'/dist.zip'; Write-Host ('  Latest release: '+$tag) } catch { $u='https://github.com/alinkiot/alinkiot_dashboard/releases/download/v0.0.2/dist.zip'; Write-Host ('  Could not resolve latest tag, falling back to v0.0.2') } }; $root=(Get-Location).Path; $www=Join-Path $root 'www'; New-Item -ItemType Directory -Path $www -Force | Out-Null; $work=Join-Path $env:TEMP ('alinkiot-'+[guid]::NewGuid().ToString()); $stage=Join-Path $www ('.dist-stage-'+[guid]::NewGuid().ToString()); try { New-Item -ItemType Directory -Path $work,$stage -Force | Out-Null; Invoke-WebRequest -UseBasicParsing -Uri $u -OutFile (Join-Path $work 'frontend.zip'); Expand-Archive -LiteralPath (Join-Path $work 'frontend.zip') -DestinationPath (Join-Path $work 'extracted'); $source=Join-Path $work 'extracted\dist'; if (-not (Test-Path (Join-Path $source 'index.html'))) { $source=Join-Path $work 'extracted' }; if (-not (Test-Path (Join-Path $source 'index.html'))) { throw 'Frontend archive does not contain index.html' }; Copy-Item -Path (Join-Path $source '*') -Destination $stage -Recurse -Force; $dist=Join-Path $www 'dist'; if (Test-Path $dist) { Remove-Item $dist -Recurse -Force }; Move-Item -LiteralPath $stage -Destination $dist; Write-Host ('  Frontend updated from '+$u) } finally { if (Test-Path $work) { Remove-Item $work -Recurse -Force }; if (Test-Path $stage) { Remove-Item $stage -Recurse -Force } }"
+exit /b %errorlevel%
+
+rem 离线安装：从仓库自带 www\dist.zip 解压覆盖。成功 0，失败 1。
+:bundled_install
+echo Extracting bundled frontend from www\dist.zip
+powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "$ErrorActionPreference='Stop'; $root=(Get-Location).Path; $www=Join-Path $root 'www'; $zip=Join-Path $www 'dist.zip'; $work=Join-Path $env:TEMP ('alinkiot-'+[guid]::NewGuid().ToString()); $stage=Join-Path $www ('.dist-stage-'+[guid]::NewGuid().ToString()); try { New-Item -ItemType Directory -Path $work,$stage -Force | Out-Null; Expand-Archive -LiteralPath $zip -DestinationPath (Join-Path $work 'extracted'); $source=Join-Path $work 'extracted\dist'; if (-not (Test-Path (Join-Path $source 'index.html'))) { $source=Join-Path $work 'extracted' }; if (-not (Test-Path (Join-Path $source 'index.html'))) { throw 'Frontend archive does not contain index.html' }; Copy-Item -Path (Join-Path $source '*') -Destination $stage -Recurse -Force; $dist=Join-Path $www 'dist'; if (Test-Path $dist) { Remove-Item $dist -Recurse -Force }; Move-Item -LiteralPath $stage -Destination $dist } finally { if (Test-Path $work) { Remove-Item $work -Recurse -Force }; if (Test-Path $stage) { Remove-Item $stage -Recurse -Force } }"
+exit /b %errorlevel%

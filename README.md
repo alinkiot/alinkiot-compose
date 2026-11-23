@@ -39,21 +39,21 @@
 | `alinkiot` | `registry.cn-hangzhou.aliyuncs.com/uzyiot/alinkiot:<分支对应版本>` | 平台核心后端服务（镜像 tag 以所在分支的 `docker-compose.yaml` 为准，详见上文「分支说明」） | `18888`(API)、`1883`(MQTT)、`8083`(MQTT over WS)、`6500` |
 | `nginx` | `nginx:alpine` | 托管 `www/dist` 中的前端静态资源并反向代理 | `58080` |
 
-仓库自带前端压缩包 `www/dist.zip`（初始版本）。运行方式分两种：
+仓库自带前端压缩包 `www/dist.zip`（基线版本，作离线兜底）。运行方式分两种：
 
-- `install`（不带参数）：**每次都从 `www/dist.zip` 解压覆盖 `www/dist`**，全程离线、不联网下载。相当于把前端恢复成仓库自带的初始版本。
-- `install update`：**自动调用 GitHub API 获取 [alinkiot_dashboard](https://github.com/alinkiot/alinkiot_dashboard) 最新 release 的 tag**，拼出 `releases/download/<tag>/dist.zip` 下载并覆盖 `www/dist`，无需手动改版本号。
+- `install`（不带参数）：**优先联网自动获取最新前端**——调用 GitHub API 取 [alinkiot_dashboard](https://github.com/alinkiot/alinkiot_dashboard) 最新 release tag，下载 `dist.zip` 覆盖 `www/dist`；若联网失败（断网、GitHub 不可达等），自动回退解压仓库自带的 `www/dist.zip`。两种方式都能装上前端，不会因网络问题卡住。
+- `install update`：**强制联网更新**到最新版本（同样的 API 自动探测），失败则报错退出，不回退。
 
 解压完成后启动 Docker Compose 服务。Nginx 将 `www/dist` 挂载到容器内的 `/var/www/html`，并将 `/iotapi` 反向代理到后端 `18888`、`/mqtt` 反向代理到后端 `8083`。
 
-> 💡 默认 `install` 全程离线可用、每次都用自带基线前端；只有 `install update` 才走网络，且会自动探测最新版本。API 不可用时回退到内置默认 tag `v0.0.2`。
+> 💡 `install` 平时自动跟最新版、断网也能装（用自带 dist.zip 兜底）；`install update` 则强制更新、失败即报错。API 不可用时以内置默认 tag `v0.0.2` 尝试下载；`FRONTEND_URL` 环境变量可覆盖自动探测。
 
 ## 目录结构
 
 ```
 alinkiot-compose/
 ├── docker-compose.yaml      # 编排文件
-├── install.sh               # install=解压自带dist.zip；update=自动取最新tag下载前端
+├── install.sh               # install=优先联网取最新/失败回退dist.zip；update=强制联网更新
 ├── install.cmd              # Windows，同 install.sh
 ├── config/
 │   ├── etc/                 # AlinkIoT 后端配置（emqx.conf、证书、插件等）
@@ -62,7 +62,7 @@ alinkiot-compose/
 │   ├── mysql/backup.sql     # MySQL 初始化脚本（首次启动自动导入）
 │   └── tdengine/init.sql    # TDengine 初始化脚本
 ├── www/
-│   ├── dist.zip             # 仓库自带的前端压缩包（每次 install 从中解压）
+│   ├── dist.zip             # 仓库自带的基线前端压缩包（联网失败时离线兜底）
 │   ├── dist/                # 解压后的前端静态文件（gitignore，不入库）
 │   └── upload/              # 上传文件目录
 └── log/                     # 各服务日志挂载目录（mysql / tdengine / nginx / alinkiot）
@@ -205,7 +205,7 @@ docker exec -i alinkiot-mysql sh -c 'mysql -u root -p"alinkiot" alinkiot' < back
 
 ## 更新前端版本
 
-默认运行 `install.sh` / `install.cmd`（不带参数）每次都会从仓库自带的 `www/dist.zip` 解压覆盖 `www/dist`，**不联网下载**（前端恢复成基线版本）。需要更新到最新前端时，加 `update` 参数：
+默认运行 `install.sh` / `install.cmd`（不带参数）会**优先联网获取最新前端**，联网失败时自动回退解压仓库自带的 `www/dist.zip`。如果只是想重新安装/启动服务，直接运行即可。需要强制更新到最新前端（联网失败即报错）时，加 `update` 参数：
 
 ```bash
 ./install.sh update
@@ -228,8 +228,8 @@ FRONTEND_URL=https://github.com/alinkiot/alinkiot_dashboard/releases/download/v0
 
 | 操作 | 命令 |
 |------|------|
-| 一键安装并启动（Linux/macOS，用自带前端） | `./install.sh` |
-| 一键安装并启动（Windows，用自带前端） | `install.cmd` |
+| 一键安装并启动（Linux/macOS，优先最新/失败用自带前端） | `./install.sh` |
+| 一键安装并启动（Windows，优先最新/失败用自带前端） | `install.cmd` |
 | 重启全部服务 | `docker-compose down && docker-compose up -d` |
 | 查看状态 | `docker-compose ps` |
 | 查看后端日志 | `docker-compose logs -f alinkiot` |
