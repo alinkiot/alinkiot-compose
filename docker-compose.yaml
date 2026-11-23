@@ -1,7 +1,7 @@
 services:
   # MySQL 服务
   alinkiot-mysql:
-    image: mysql:8.0
+    image: docker.m.daocloud.io/library/mysql:8.0
     container_name: alinkiot-mysql
     environment:
       MYSQL_ROOT_PASSWORD: alinkiot
@@ -21,7 +21,7 @@ services:
 
   # TDengine 服务
   alinkiot-tdengine:
-    image: tdengine/tdengine:3.0.3.2
+    image: docker.m.daocloud.io/tdengine/tdengine:3.0.3.2
     container_name: alinkiot-tdengine
     environment:
       TAOS_FQDN: tdengine
@@ -41,7 +41,7 @@ services:
 
   # Nginx 服务
   nginx:
-    image: nginx:alpine
+    image: docker.m.daocloud.io/library/nginx:alpine
     container_name: nginx
     ports:
       - "58080:80"
