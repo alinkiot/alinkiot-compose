@@ -46,7 +46,7 @@
 
 解压完成后启动 Docker Compose 服务。Nginx 将 `www/dist` 挂载到容器内的 `/var/www/html`，并将 `/iotapi` 反向代理到后端 `18888`、`/mqtt` 反向代理到后端 `8083`。
 
-> 💡 `install` 全程离线、稳定可复现；只有 `install update` 才走网络，并自动探测最新版本。API 不可用时回退到内置默认 tag `v0.0.2`；`FRONTEND_URL` 环境变量可覆盖自动探测。
+> 💡 `install` 全程离线、稳定可复现（`FRONTEND_URL` 对它无效）；只有 `install update` 才走网络并自动探测最新版本。update 时 API 不可达会回退到内置默认 tag `v0.0.2`。
 
 ## 目录结构
 
@@ -95,6 +95,8 @@ Windows 在项目目录双击 `install.cmd`，或在命令提示符中运行：
 ```bat
 install.cmd
 ```
+
+该命令会从仓库自带的 `www/dist.zip` 离线解压出前端并启动服务，**不联网**。若要把前端更新到最新版，改用 `install update`（见[更新前端版本](#更新前端版本)）。
 
 首次启动时：
 
@@ -219,11 +221,12 @@ install.cmd update
 
 `update` 会自动请求 GitHub API `https://api.github.com/repos/alinkiot/alinkiot_dashboard/releases/latest`，取返回 JSON 里的 `tag_name`（如 `v0.0.3`），拼出 `https://github.com/alinkiot/alinkiot_dashboard/releases/download/<tag>/dist.zip` 下载。若 API 不可达（断网、限流等），则回退到脚本内置的 `DEFAULT_TAG`（默认 `v0.0.2`）。
 
-如需固定到某个版本或走自定义镜像，可用 `FRONTEND_URL` 环境变量覆盖自动探测（设置后脚本直接使用该地址，不再请求 API）：
+如需固定到某个版本或走自定义镜像，可用 `FRONTEND_URL` 环境变量覆盖自动探测（仅 `update` 生效；设置后脚本直接使用该地址，不再请求 API）：
 
 ```bash
 FRONTEND_URL=https://github.com/alinkiot/alinkiot_dashboard/releases/download/v0.0.2/dist.zip ./install.sh update
 ```
+
 ## 常见操作速查
 
 | 操作 | 命令 |
