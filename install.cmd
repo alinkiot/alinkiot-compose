@@ -26,20 +26,15 @@ if "%MODE%"=="update" (
     )
     echo Frontend updated.
 ) else (
-    call :online_install
-    if not errorlevel 1 (
-        echo Frontend installed from latest release.
-    ) else (
-        echo Online fetch failed, falling back to bundled www\dist.zip
-        if not exist "www\dist.zip" (
-            echo www\dist.zip not found, cannot install offline.
-            exit /b 1
-        )
-        call :bundled_install
-        if errorlevel 1 (
-            echo Bundled frontend extraction failed.
-            exit /b 1
-        )
+    rem install（无参数）：纯离线，从仓库自带 dist.zip 解压覆盖
+    if not exist "www\dist.zip" (
+        echo www\dist.zip not found. Run with 'update' to download.
+        exit /b 1
+    )
+    call :bundled_install
+    if errorlevel 1 (
+        echo Bundled frontend extraction failed.
+        exit /b 1
     )
 )
 

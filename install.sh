@@ -112,20 +112,15 @@ if [ "$MODE" = "update" ]; then
         exit 1
     fi
 else
-    # install：优先联网拉最新，失败回退仓库自带 dist.zip（离线兜底）
-    if fetch_and_install_online; then
-        echo ">>> Frontend installed from latest release"
-    else
-        echo ">>> Online fetch failed, falling back to bundled www/dist.zip" >&2
-        if [ ! -f "$PROJECT_DIR/www/dist.zip" ]; then
-            echo "www/dist.zip not found, cannot install offline." >&2
-            exit 1
-        fi
-        echo ">>> Extracting bundled frontend from www/dist.zip"
-        if ! install_frontend_archive "$PROJECT_DIR/www/dist.zip"; then
-            echo "Bundled frontend extraction failed." >&2
-            exit 1
-        fi
+    # install（无参数）：纯离线，从仓库自带 dist.zip 解压覆盖，全程不联网
+    if [ ! -f "$PROJECT_DIR/www/dist.zip" ]; then
+        echo "www/dist.zip not found. Run with 'update' to download." >&2
+        exit 1
+    fi
+    echo ">>> Extracting bundled frontend from www/dist.zip"
+    if ! install_frontend_archive "$PROJECT_DIR/www/dist.zip"; then
+        echo "Bundled frontend extraction failed." >&2
+        exit 1
     fi
 fi
 
