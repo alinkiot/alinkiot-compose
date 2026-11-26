@@ -76,7 +76,7 @@ services:
       - "6500:6500"
     mac_address: "02:42:ac:1a:00:10"
     volumes:
-      - ./www/upload:/opt/alinkiot/www/upload
+      - ./www/upload:/opt/alinkiot/www/iotapi/upload
       - ./log/alinkiot:/opt/alinkiot/log
       - ./config/certs:/opt/alinkiot/etc/certs
       - ./config/etc/alinkiot.conf:/opt/alinkiot/etc/alinkiot.conf
