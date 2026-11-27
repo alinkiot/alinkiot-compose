@@ -1037,7 +1037,9 @@ UNLOCK TABLES;
 -- Dump completed on 2026-10-12  0:17:11
 
 -- ---------------------------------------------------------------
--- 以下为 init/mysql/migrations-- 1. sys_menu 增加 is_top（菜单置顶，顶部导航与搜索快捷入口使用）
+-- 以下为 init/mysql/migrations 下的增量脚本，新环境初始化时一并执行
+-- ---------------------------------------------------------------
+-- 1. sys_menu 增加 is_top（菜单置顶，顶部导航与搜索快捷入口使用）
 SET @has_is_top = (SELECT COUNT(*) FROM information_schema.COLUMNS
                    WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'sys_menu' AND COLUMN_NAME = 'is_top');
 SET @ddl = IF(@has_is_top = 0,
