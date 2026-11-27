@@ -1,3 +1,5 @@
+SET NAMES utf8mb4;
+
 -- 1. sys_menu 增加 is_top（菜单置顶，顶部导航与搜索快捷入口使用）
 SET @has_is_top = (SELECT COUNT(*) FROM information_schema.COLUMNS
                    WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'sys_menu' AND COLUMN_NAME = 'is_top');
